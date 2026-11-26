@@ -60,22 +60,21 @@ def seed_books_by_category(db_path="books.db"):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 author TEXT NOT NULL,
-                category TEXT NOT NULL DEFAULT '',
-                genre TEXT NOT NULL DEFAULT ''
+                genre TEXT NOT NULL DEFAULT '',
+                summary TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL DEFAULT ''
             )
             """
         )
 
         cur.execute("PRAGMA table_info(books)")
         columns = [row[1] for row in cur.fetchall()]
-        if "category" not in columns:
-            cur.execute("ALTER TABLE books ADD COLUMN category TEXT NOT NULL DEFAULT ''")
-            columns.append("category")
         if "genre" not in columns:
             cur.execute("ALTER TABLE books ADD COLUMN genre TEXT NOT NULL DEFAULT ''")
-            columns.append("genre")
-
-        has_genre = "genre" in columns
+        if "summary" not in columns:
+            cur.execute("ALTER TABLE books ADD COLUMN summary TEXT NOT NULL DEFAULT ''")
+        if "category" not in columns:
+            cur.execute("ALTER TABLE books ADD COLUMN category TEXT NOT NULL DEFAULT ''")
 
         with conn:
             for category, books in FEATURED_BOOKS.items():
@@ -84,21 +83,21 @@ def seed_books_by_category(db_path="books.db"):
                     (category,),
                 )
                 for title, author in books:
+                    summary = f"{title} by {author} — {category} selection."
                     cur.execute(
                         "SELECT 1 FROM books WHERE title = ? AND author = ? AND category = ?",
                         (title, author, category),
                     )
                     if cur.fetchone() is None:
-                        if has_genre:
-                            cur.execute(
-                                "INSERT INTO books (title, author, category, genre) VALUES (?, ?, ?, ?)",
-                                (title, author, category, category),
-                            )
-                        else:
-                            cur.execute(
-                                "INSERT INTO books (title, author, category) VALUES (?, ?, ?)",
-                                (title, author, category),
-                            )
+                        cur.execute(
+                            "INSERT INTO books (title, author, genre, summary, category) VALUES (?, ?, ?, ?, ?)",
+                            (title, author, category, summary, category),
+                        )
+                    else:
+                        cur.execute(
+                            "UPDATE books SET genre = ?, summary = ? WHERE title = ? AND author = ? AND category = ?",
+                            (category, summary, title, author, category),
+                        )
     finally:
         conn.close()
 
