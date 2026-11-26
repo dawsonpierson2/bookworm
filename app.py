@@ -195,6 +195,143 @@ def index():
         logo_exists=logo_exists,
     )
 
+from concurrent.futures import ThreadPoolExecutor
+import json
+import os
+import sqlite3
+import urllib.request
+from flask import jsonify, request
+
+BOOK_WORKER_POOL = ThreadPoolExecutor(max_workers=2)
+
+
+def _search_catalog_books(prompt_text, limit=8):
+    words = [
+        w.strip(".,!?\"'()").lower()
+        for w in prompt_text.split()
+        if len(w.strip(".,!?\"'()")) > 1
+    ]
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.cursor()
+        if not words:
+            rows = cur.execute(
+                "SELECT id, title, author, genre, category, summary FROM books ORDER BY id LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+        conditions = []
+        params = []
+        for word in words:
+            pattern = f"%{word}%"
+            conditions.append(
+                "(LOWER(title) LIKE ? OR LOWER(author) LIKE ? OR LOWER(genre) LIKE ? OR LOWER(category) LIKE ? OR LOWER(summary) LIKE ?)"
+            )
+            params.extend([pattern, pattern, pattern, pattern, pattern])
+
+        sql = (
+            "SELECT id, title, author, genre, category, summary FROM books WHERE "
+            + " OR ".join(conditions)
+            + " ORDER BY id LIMIT ?"
+        )
+        params.append(limit)
+        rows = cur.execute(sql, params).fetchall()
+
+        if not rows:
+            rows = cur.execute(
+                "SELECT id, title, author, genre, category, summary FROM books ORDER BY RANDOM() LIMIT ?",
+                (min(limit, 5),),
+            ).fetchall()
+
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def _process_book_worker(visitor_request, mode="find_or_recommend"):
+    matches = _search_catalog_books(visitor_request, limit=8)
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+
+    if not matches:
+        return {
+            "reply": "No books matched that search yet. Try a title, author, topic, or category.",
+            "matches": [],
+        }
+
+    if not api_key:
+        formatted = "; ".join(
+            f"{m['title']} by {m['author']} [{m['category'] or m['genre']}]"
+            for m in matches[:5]
+        )
+        prefix = "Recommended from BookWorm:" if mode == "recommend" else "Found in BookWorm:"
+        return {
+            "reply": f"{prefix} {formatted}.",
+            "matches": matches,
+        }
+
+    catalog_context = "\n".join(
+        f"- Title: {m['title']} | Author: {m['author']} | Category: {m['category'] or m['genre']} | Genre: {m['genre'] or m['category']} | Summary: {m['summary']}"
+        for m in matches
+    )
+
+    payload = {
+        "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are BookWorm's helpful AI book assistant. Help visitors find specific books "
+                    "and recommend great reads using the provided BookWorm catalog entries first. "
+                    "Mention why each recommended book fits the visitor's request."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Mode: {mode}\nVisitor request: {visitor_request}\n\nAvailable BookWorm books:\n{catalog_context}",
+            },
+        ],
+        "temperature": 0.4,
+    }
+
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        reply_text = data["choices"][0]["message"]["content"].strip()
+    except Exception:
+        formatted = "; ".join(f"{m['title']} by {m['author']}" for m in matches[:5])
+        reply_text = f"Here are matching books from BookWorm: {formatted}."
+
+    return {
+        "reply": reply_text,
+        "matches": matches,
+    }
+
+
+@app.route("/api/ai-book-worker", methods=["POST"])
+def api_ai_book_worker():
+    payload = request.get_json(silent=True) or {}
+    visitor_request = (payload.get("query") or request.form.get("query") or "").strip()
+    mode = (payload.get("mode") or "find_or_recommend").strip()
+
+    if not visitor_request:
+        return jsonify({"error": "Please enter a book title, author, topic, or what you want to read."}), 400
+
+    future = BOOK_WORKER_POOL.submit(_process_book_worker, visitor_request, mode)
+    result = future.result(timeout=25)
+    return jsonify(result)
+
 
 if __name__ == "__main__":
     init_db()

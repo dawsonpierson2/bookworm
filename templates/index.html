@@ -60,3 +60,50 @@
   </main>
 </body>
 </html>
+<section id="bookworm-ai-assistant">
+  <h3>BookWorm AI Assistant — Find or Recommend Books</h3>
+  <input
+    type="text"
+    id="bw-ai-input"
+    placeholder="Search a title or author, or ask for a recommendation..."
+  />
+  <button type="button" id="bw-find-btn">Find Books</button>
+  <button type="button" id="bw-recommend-btn">Recommend Books</button>
+  <p id="bw-ai-reply"></p>
+  <ul id="bw-ai-list"></ul>
+</section>
+
+<script>
+async function askBookWormWorker(mode) {
+  const input = document.getElementById("bw-ai-input");
+  const replyEl = document.getElementById("bw-ai-reply");
+  const listEl = document.getElementById("bw-ai-list");
+  const query = input.value.trim();
+  if (!query) return;
+
+  replyEl.textContent = mode === "recommend" ? "Building recommendations..." : "Searching BookWorm...";
+  listEl.innerHTML = "";
+
+  try {
+    const res = await fetch("/api/ai-book-worker", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, mode })
+    });
+    const data = await res.json();
+    replyEl.textContent = data.reply || data.error || "No response received.";
+
+    (data.matches || []).forEach((book) => {
+      const li = document.createElement("li");
+      const label = book.category || book.genre || "BookWorm";
+      li.textContent = `${book.title} by ${book.author} (${label})`;
+      listEl.appendChild(li);
+    });
+  } catch (err) {
+    replyEl.textContent = "Unable to reach the BookWorm AI assistant right now.";
+  }
+}
+
+document.getElementById("bw-find-btn").addEventListener("click", () => askBookWormWorker("find"));
+document.getElementById("bw-recommend-btn").addEventListener("click", () => askBookWormWorker("recommend"));
+</script>
