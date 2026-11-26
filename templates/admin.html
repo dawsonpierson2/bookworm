@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BookWorm Admin Dashboard</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #faf6ee; color: #1e242b; max-width: 820px; margin: 30px auto; padding: 0 20px; }
+        .top { display: flex; justify-content: space-between; align-items: center; }
+        form.add-form { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2d8c5; display: grid; gap: 12px; margin-bottom: 28px; }
+        input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; }
+        button { padding: 10px 16px; background: #2c6e7f; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .del-btn { background: #b91c1c; padding: 6px 12px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #1f3b5c; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <h1>Manage BookWorm Catalog</h1>
+        <div><a href="/">View Site</a> | <a href="/logout">Logout</a></div>
+    </div>
+
+    <form method="POST" class="add-form">
+        <h3>Add a New Book</h3>
+        <input type="text" name="title" placeholder="Book Title" required>
+        <input type="text" name="author" placeholder="Author Name" required>
+        <input type="text" name="genre" placeholder="Genre (e.g., Sci-Fi, Thriller, Fantasy)" required>
+        <input type="number" step="0.1" min="1" max="5" name="rating" value="4.5" required>
+        <textarea name="desc" rows="2" placeholder="Short book description..." required></textarea>
+        <button type="submit">Add Book to Database</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Title</th><th>Author</th><th>Genre</th><th>Rating</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+            {% for b in books %}
+            <tr>
+                <td>{{ b.title }}</td>
+                <td>{{ b.author }}</td>
+                <td>{{ b.genre }}</td>
+                <td>★ {{ b.rating }}</td>
+                <td>
+                    <form method="POST" action="/admin/delete/{{ b.id }}">
+                        <button type="submit" class="del-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

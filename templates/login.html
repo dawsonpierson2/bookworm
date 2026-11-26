@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BookWorm Admin Login</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #faf6ee; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #fff; padding: 30px; border-radius: 12px; border: 1px solid #e2d8c5; width: 320px; }
+        h2 { margin-top: 0; color: #1f3b5c; }
+        input { width: 100%; padding: 10px; margin: 10px 0 16px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #1f3b5c; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .err { color: #b91c1c; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <form method="POST" class="box">
+        <h2>BookWorm Admin</h2>
+        {% if error %}<p class="err">{{ error }}</p>{% endif %}
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter admin password" required>
+        <button type="submit">Log In</button>
+        <p style="text-align:center; margin-bottom:0;"><a href="/">← Back to Site</a></p>
+    </form>
+</body>
+</html>

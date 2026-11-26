@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookWorm</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand-group">
+      {% if logo_exists %}
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="BookWorm reading by a rainy fireplace" class="brand-thumb">
+      {% endif %}
+      <div>
+        <h1 class="site-title">BookWorm</h1>
+        <p class="site-tagline">Rainy-Day Hearth &amp; Antiquarian Picks</p>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="{{ url_for('index') }}#catalog">Catalog</a>
+      <a href="{{ url_for('index') }}#genres">Genres</a>
+      <a href="{{ url_for('index') }}#about">About</a>
+    </nav>
+  </header>
+
+  <main class="page-layout">
+    <aside class="sidebar">
+      <h2 id="genres">Genres</h2>
+      <ul class="genre-list">
+        <li>
+          <a href="{{ url_for('index') }}#catalog" class="{% if selected_genre == 'All' %}active-genre{% endif %}">All Books</a>
+        </li>
+        {% for genre in genres %}
+          <li>
+            <a href="{{ url_for('index', genre=genre) }}#catalog" class="{% if selected_genre == genre %}active-genre{% endif %}">{{ genre }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <h2>Reading Picks</h2>
+      <p id="about">Curated selections for a quiet afternoon by the fire while rain taps the glass.</p>
+      {% if logo_exists %}
+        <figure class="reading-scene">
+          <img src="{{ url_for('static', filename='logo.png') }}" alt="Worm with glasses reading a book by a fireplace on a rainy day">
+          <figcaption>15th-century hearth study</figcaption>
+        </figure>
+      {% endif %}
+    </aside>
+
+    <section id="catalog" class="book-grid">
+      {% for book in books %}
+        <article class="book-card">
+          <h3 class="book-title">{{ book.title }}</h3>
+          <p class="book-meta">{{ book.author }} &middot; {{ book.genre }}</p>
+          <p class="book-summary">{{ book.summary }}</p>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[2026-11-26 10:18:58 -0500] [11609] [INFO] Starting gunicorn 25.3.0
+[2026-11-26 10:18:58 -0500] [11609] [INFO] Listening at: http://0.0.0.0:5000 (11609)
+[2026-11-26 10:18:58 -0500] [11609] [INFO] Using worker: sync
+[2026-11-26 10:18:58 -0500] [11611] [INFO] Booting worker with pid: 11611
+[2026-11-26 10:18:58 -0500] [11612] [INFO] Booting worker with pid: 11612
+[2026-11-26 10:18:58 -0500] [11609] [INFO] Control socket listening at /run/user/1000/gunicorn.ctl
+127.0.0.1 - - [26/Nov/2026:10:19:00 -0500] "HEAD / HTTP/1.1" 200 0 "-" "curl/8.20.0"
+[2026-11-26 10:23:16 -0500] [11609] [INFO] Handling signal: term
+[2026-11-26 10:23:16 -0500] [11611] [INFO] Worker exiting (pid: 11611)
+[2026-11-26 10:23:16 -0500] [11612] [INFO] Worker exiting (pid: 11612)
+[2026-11-26 10:23:16 -0500] [11609] [INFO] Worker (pid:11611) was sent SIGTERM!
+[2026-11-26 10:23:16 -0500] [11609] [INFO] Worker (pid:11612) was sent SIGTERM!
+[2026-11-26 10:23:16 -0500] [11609] [INFO] Shutting down: Master
